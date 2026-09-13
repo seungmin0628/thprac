@@ -1,0 +1,15 @@
+{
+  "games": {
+    "TH06": {
+      "path": "C:\\Games\\Touhou06-Test\\東方紅魔郷.exe",
+      "thcrap": {
+        "loader": "C:\\Games\\thcrap\\bin\\thcrap_loader.exe",
+        "config": "C:\\Games\\thcrap\\config\\ko.js",
+        "workingDirectory": "C:\\Games\\thcrap",
+        "timeoutSeconds": 60
+      }
+    },
+    "TH18": "C:\\Games\\Touhou18-Test\\th18.exe",
+    "TH19": "C:\\Games\\Touhou19-Test\\th19.exe"
+  }
+}
