@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "defaultGame": "th06",
+  "thpracPath": "Debug\\thprac.exe",
+  "games": {
+    "th06": {
+      "launchMode": "externalAttach",
+      "path": "C:\\Games\\thcrap\\bin\\thcrap_loader.exe",
+      "arguments": ["plain.js", "th06"],
+      "processPath": "C:\\Games\\Touhou\\th06\\東方紅魔郷.exe",
+      "requiredModules": ["thcrap.dll"],
+      "companionProcessNames": ["vpatch"]
+    },
+    "th10": {
+      "path": "%USERPROFILE%\\Games\\Touhou\\th10\\th10.exe",
+      "arguments": []
+    }
+  }
+}

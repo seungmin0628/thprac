@@ -20,6 +20,22 @@ msbuild thprac.sln -t:restore,build -p:RestorePackagesConfig=true,Configuration=
 
 For debugging, select `Debug|Win32` in Visual Studio. Confirm that `Release/thprac.exe` is produced and launches. Game-specific changes require manual testing against the affected supported game and replay playback; record the tested game/version and scenario in the PR.
 
+### WSL2 autonomous debug loop
+
+Run Windows PowerShell and Visual Studio/MSBuild from WSL2; do not attempt to compile this Windows target with the WSL toolchain. From the repository root:
+
+```sh
+powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$(wslpath -w scripts/build-debug.ps1)"
+powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$(wslpath -w scripts/debug-session.ps1)" start -Name smoke
+powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$(wslpath -w scripts/debug-session.ps1)" status -Name smoke
+powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$(wslpath -w scripts/collect-debug.ps1)" -Name smoke
+powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$(wslpath -w scripts/debug-session.ps1)" stop -Name smoke
+```
+
+Copy `.codex/thprac-debug/config.example.json` to the ignored `config.json`, edit the Windows paths, and inspect them with `debug-session.ps1 games`. Start a configured game with `debug-session.ps1 start -Name th06-smoke -Game th06`; `defaultGame` is used when neither `-Game` nor `-GamePath` is supplied. Pass `-LauncherOnly` to ignore the configured default, or pass `-GamePath 'C:\path\to\thXX.exe'` for a one-off override. CLI `-ThpracPath` overrides the config value. Each named session tracks only the PIDs that it started. Build logs, MSBuild binlogs, session state, stdout/stderr, Windows crash events, and discovered dumps stay under `.codex/debug/` and are ignored by Git. Use the repository skill at `.codex/skills/thprac-debug/SKILL.md` for the complete develop/build/run/verify/diagnose/fix workflow.
+
+When a game must run through thcrap, configure that alias with `"launchMode": "externalAttach"`, the thcrap loader in `path`, its runconfig/game arguments, the real executable in `processPath`, and `"requiredModules": ["thcrap.dll"]`. Add wrapper-owned helpers such as `vpatch` to `companionProcessNames` so session cleanup includes them. The session starts thcrap first, verifies the real game and module, then attaches thprac by PID. Do not replace this mode with a direct launch when the wrapper provides compatibility fixes.
+
 ## Coding Style & Naming Conventions
 
 The project uses C++20, UTF-8 compilation, and warning level 4. Match the surrounding file: both naming and brace styles vary. Prefer four-space indentation, shallow control flow, early returns, and the existing `defer` macro where appropriate. Put memory addresses in a named `addrs` enum rather than raw literals; model repeated offsets with a struct. Do not introduce `std::format`. Preserve established warp ordering because changing it can break replay compatibility.
