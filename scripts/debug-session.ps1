@@ -29,7 +29,7 @@ New-Item -ItemType Directory -Force -Path $sessionRoot | Out-Null
 
 # Touhou and thprac are Win32 processes. A 64-bit PowerShell host cannot enumerate
 # their complete module lists, so transparently re-run this session command in the
-# Windows 32-bit host. This keeps the normal WSL `powershell.exe -File ...` entrypoint.
+# Windows 32-bit host. This keeps the normal Windows/WSL `powershell.exe -File ...` entrypoint.
 if ([Environment]::Is64BitOperatingSystem -and [Environment]::Is64BitProcess) {
     $x86PowerShell = Join-Path $env:WINDIR "SysWOW64\WindowsPowerShell\v1.0\powershell.exe"
     if (-not (Test-Path -LiteralPath $x86PowerShell)) { throw "32-bit Windows PowerShell was not found at '$x86PowerShell'." }

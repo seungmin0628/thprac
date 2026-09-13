@@ -20,21 +20,25 @@ msbuild thprac.sln -t:restore,build -p:RestorePackagesConfig=true,Configuration=
 
 For debugging, select `Debug|Win32` in Visual Studio. Confirm that `Release/thprac.exe` is produced and launches. Game-specific changes require manual testing against the affected supported game and replay playback; record the tested game/version and scenario in the PR.
 
-### WSL2 autonomous debug loop
+### Windows-native autonomous debug loop
 
-Run Windows PowerShell and Visual Studio/MSBuild from WSL2; do not attempt to compile this Windows target with the WSL toolchain. From the repository root:
+Use the Windows-native Codex agent with PowerShell as the integrated terminal. Open this repository by its native Windows path (for example `C:\workspace\github.com\seungmin0628\thprac`), not through `/mnt/c` or `\\wsl$`. Keep the desktop unlocked and the game window visible when using Computer Use. Build this Win32 project with Windows Visual Studio/MSBuild, never with a WSL compiler.
 
-```sh
-powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$(wslpath -w scripts/build-debug.ps1)"
-powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$(wslpath -w scripts/debug-session.ps1)" start -Name smoke
-powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$(wslpath -w scripts/debug-session.ps1)" status -Name smoke
-powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$(wslpath -w scripts/collect-debug.ps1)" -Name smoke
-powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$(wslpath -w scripts/debug-session.ps1)" stop -Name smoke
+From the repository root in PowerShell:
+
+```powershell
+powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\scripts\build-debug.ps1
+powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\scripts\debug-session.ps1 start -Name smoke
+powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\scripts\debug-session.ps1 status -Name smoke
+powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\scripts\collect-debug.ps1 -Name smoke
+powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\scripts\debug-session.ps1 stop -Name smoke
 ```
 
-Copy `.codex/thprac-debug/config.example.json` to the ignored `config.json`, edit the Windows paths, and inspect them with `debug-session.ps1 games`. Start a configured game with `debug-session.ps1 start -Name th06-smoke -Game th06`; `defaultGame` is used when neither `-Game` nor `-GamePath` is supplied. Pass `-LauncherOnly` to ignore the configured default, or pass `-GamePath 'C:\path\to\thXX.exe'` for a one-off override. CLI `-ThpracPath` overrides the config value. Each named session tracks only the PIDs that it started. Build logs, MSBuild binlogs, session state, stdout/stderr, Windows crash events, and discovered dumps stay under `.codex/debug/` and are ignored by Git. Use the repository skill at `.codex/skills/thprac-debug/SKILL.md` for the complete develop/build/run/verify/diagnose/fix workflow.
+Copy `.codex/thprac-debug/config.example.json` to the ignored `config.json`, edit the Windows paths, and inspect them with `debug-session.ps1 games`. Start a configured game with `debug-session.ps1 start -Name th06-smoke -Game th06`; `defaultGame` is used when neither `-Game` nor `-GamePath` is supplied. Pass `-LauncherOnly` to ignore the configured default, or pass `-GamePath 'C:\path\to\thXX.exe'` for a one-off override. CLI `-ThpracPath` overrides the config value. Each named session tracks only the PIDs that it started. Build logs, MSBuild binlogs, session state, stdout/stderr, Windows crash events, and discovered dumps stay under `.codex/debug/` and are ignored by Git. Use the repository skill at `.codex/skills/thprac-debug/SKILL.md` for the complete develop/build/run/verify/diagnose/fix workflow. Configure equivalent Build, Run, Status, Collect, and Stop actions in the Codex desktop local environment UI when convenient; keep these scripts as the canonical implementation.
 
 When a game must run through thcrap, configure that alias with `"launchMode": "externalAttach"`, the thcrap loader in `path`, its runconfig/game arguments, the real executable in `processPath`, and `"requiredModules": ["thcrap.dll"]`. Add wrapper-owned helpers such as `vpatch` to `companionProcessNames` so session cleanup includes them. The session starts thcrap first, verifies the real game and module, then attaches thprac by PID. Do not replace this mode with a direct launch when the wrapper provides compatibility fixes.
+
+WSL2 remains an optional command-line compatibility path for non-GUI work. From WSL, invoke the same scripts through `powershell.exe` and convert script paths with `wslpath -w`. Do not treat a WSL task as GUI-verified when Computer Use cannot initialize against its Linux working-directory URI; reopen the project as a Windows-native Codex task for visual verification.
 
 ## Coding Style & Naming Conventions
 
