@@ -27,6 +27,20 @@ Run build.ps1 as a script, not dot-sourced: it exits with the build result and i
 
 ## Configure a game
 
+### New Classic build integration
+
+The existing build now also compiles `thprac_bridge64.vcxproj` and
+`thprac_th06nc.vcxproj` with the x64 v145 toolchain, then embeds the native outputs,
+FreeType and notices as resources in the normal `Debug/thprac.exe` or
+`Release/thprac.exe`. The solution platform remains x86/Win32. No extra user-facing
+executable, CMake or Python build step is required. See [README_NC.md](../README_NC.md).
+
+Run `scripts/test-native-bundle.ps1 -Configuration Release` (or Debug) to verify
+the linked EXE's resource completeness, x86/x64 architecture, embedded binary
+hashes and bundle ID without executing any game code. Use the usual
+`debug-session.ps1 start -LauncherOnly` for GUI checks. Steam's NC launch path is
+not a managed disposable game session; do not launch it from that test launcher.
+
 Copy debug.example.json to **debug.local.json**, then replace example paths with absolute paths to disposable test installations. Alternatively set process environment variables:
 
 ~~~powershell
@@ -57,6 +71,13 @@ Job close kills only this launch's members, including on worker death or startup
 Run `scripts\test-debug-job.ps1` for the no-game regression check: Unicode/quoted argument handling, early loader exit, child membership, cleanup, unrelated same-name process survival, and stale PID rejection. Fixtures and outputs remain under .debug.
 
 ## Session lifecycle
+
+For Steam New Classic, use `start -Game TH06NC -GamePath '<installation>\th06nc.exe'`.
+The Steam client must already be running. The worker supplies Steam app ID 4659620
+only in its own environment and its children, allowing a direct launch whose
+process remains owned by the session. It then attaches the integrated thprac build.
+Use a disposable installation unless the owner explicitly authorizes testing the
+actual installation and its normal settings/save writes.
 
 ~~~powershell
 .\scripts\debug-session.ps1 start -LauncherOnly

@@ -123,6 +123,7 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="thprac.rc" />
+    <ResourceCompile Include="$(IntDir)nc_bundle.rc" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon.ico" />
@@ -176,7 +177,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <FixedBaseAddress>false</FixedBaseAddress>
-      <AdditionalDependencies>kernel32.lib;ntdll.lib;user32.lib;freetype.lib;gdi32.lib;ole32.lib;comdlg32.lib;shell32.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;ntdll.lib;user32.lib;freetype.lib;gdi32.lib;ole32.lib;comdlg32.lib;shell32.lib;advapi32.lib</AdditionalDependencies>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
@@ -241,6 +242,13 @@
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <Target Name="BuildNativeBundle" BeforeTargets="ResourceCompile" DependsOnTargets="CustomBuildStep">
+    <MSBuild Projects="$(ProjectDir)thprac_bridge64.vcxproj;$(ProjectDir)thprac_th06nc.vcxproj"
+             Targets="Build" BuildInParallel="false"
+             Properties="Configuration=$(BuildType);Platform=x64"
+             RemoveProperties="OutDir;IntDir;TargetName;TargetPath;PlatformToolset" />
+    <Exec WorkingDirectory="$(ProjectDir)" Command="powershell.exe -NoProfile -File &quot;$(ProjectDir)..\scripts\native-bundle.ps1&quot; -Configuration $(BuildType) -Output &quot;$(IntDir)nc_bundle.rc&quot;" />
+  </Target>
   <ProjectExtensions>
     <VisualStudio>
       <UserProperties />

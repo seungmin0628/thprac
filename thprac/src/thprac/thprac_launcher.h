@@ -92,6 +92,7 @@ struct LauncherInstance {
     bool apply_thprac;
     bool allow_oilp = true;
     bool allow_vpatch = true;
+    bool low_latency = false;
 };
 
 struct LauncherGame {
@@ -99,6 +100,7 @@ struct LauncherGame {
     th_glossary_t title;
     int default_launch = -1;
     unsigned int selected = 0;
+    bool nc_launch_options_seen = false;
 
     // Multiple versions for the same game are guaranteed to be sequential in memory,
     // so this is safe.
@@ -158,7 +160,7 @@ struct LinkSet {
 };
 
 constexpr unsigned int PC98_GAMES_LEN = 5;
-constexpr unsigned int MAIN_GAMES_LEN = 15;
+constexpr unsigned int MAIN_GAMES_LEN = 16;
 constexpr unsigned int SPINOFF_SHMUP_LEN = 7;
 constexpr unsigned int SPINOFF_OTHER_LEN = 7;
 constexpr unsigned int ALL_GAMES_LEN = PC98_GAMES_LEN + MAIN_GAMES_LEN + SPINOFF_SHMUP_LEN + SPINOFF_OTHER_LEN;

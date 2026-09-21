@@ -39,6 +39,14 @@ try {
             } while ([DateTime]::UtcNow -lt $deadline)
             if (!$gameProcess) { throw 'Timed out waiting for the configured game inside the thcrap session job.' }
         } else {
+            if ($state.targetGame -ieq 'TH06NC') {
+                # The Steam client is still required. Supply its application
+                # identity for a direct debug launch so the retained process
+                # does not exit/relaunch outside this managed session.
+                # These variables exist only in this worker and its children.
+                $env:SteamAppId = '4659620'
+                $env:SteamGameId = '4659620'
+            }
             $gameProcess = Start-Process -FilePath $state.gamePath -WorkingDirectory (Split-Path $state.gamePath -Parent) -PassThru -WindowStyle Normal
         }
         $state.game = Get-ProcessRecord $gameProcess $state.gamePath

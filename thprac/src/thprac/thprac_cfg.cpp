@@ -2,6 +2,7 @@
 #include "thprac_log.h"
 #include "thprac_utils.h"
 #include "thprac_update.h"
+#include "thprac_native_bundle.h"
 #include "utils/wininternal.h"
 
 #include <utility>
@@ -374,12 +375,16 @@ void GuiSettings() {
     ImGui::TextUnformatted(S(THPRAC_UPDATE_BEHAVIOR));
     ImGui::Separator();
 
-    if (!UpdaterInitialized()) {
+    const bool nativeBundle = NativeBundle::Present();
+    if (nativeBundle) {
+        ImGui::TextWrapped("%s", S(TH06NC_LOCAL_UPDATES));
+    } else if (!UpdaterInitialized()) {
         ImGui::PushStyleColor(ImGuiCol_Text, 0xFFFF0000);
         ImGui::TextUnformatted(S(THPRAC_UPDATE_INIT_FAILED));
         ImGui::PopStyleColor();
     }
 
+    ImGui::BeginDisabled(nativeBundle);
     ImGui::PushItemWidth(ImGui::GetFontSize() * 16.0f);
     ImGui::Combo(S(THPRAC_FILENAME_AFTER_UPDATE), (int*)&gSettings.filename_after_update, S(THPRAC_FILENAME_AFTER_UPDATE_OPTION));
     ImGui::Combo(S(THPRAC_CHECK_UPDATE_WHEN), (int*)&gSettings.check_update, S(THPRAC_CHECK_UPDATE_WHEN_OPTION));
@@ -395,6 +400,7 @@ void GuiSettings() {
     } else if (ImGui::Button(S(THPRAC_CHECK_UPDATE_NOW))) {
         background_update_check->hThread = CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)DownloadFile, background_update_check, 0, nullptr);
     }
+    ImGui::EndDisabled();
     
     ImGui::NewLine();
     ImGui::TextUnformatted(S(THPRAC_REBIND_HOTKEYS));

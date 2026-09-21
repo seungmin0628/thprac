@@ -603,29 +603,45 @@ namespace Gui {
     {
         g_wndNoClose_ = noClose ? 1 : 0;
     }
+#ifdef THPRAC_NATIVE_WIDGETS_ONLY
+    static ImGuiContext* g_hookContext = nullptr;
+#endif
     static LRESULT CALLBACK __ThImGui_WndProc_HookFunc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         if (g_wndNoClose_ && msg == WM_CLOSE) {
             return 1;
         }
-        if (ImplWin32WndProcHandler(hwnd, msg, wParam, lParam)) {
+#ifdef THPRAC_NATIVE_WIDGETS_ONLY
+        // The D3D11 module restores the previous context after Present. Window
+        // messages arrive between frames and still need the overlay's context.
+        auto* previousContext = ImGui::GetCurrentContext();
+        ImGui::SetCurrentContext(g_hookContext);
+#endif
+        auto handled = ImplWin32WndProcHandler(hwnd, msg, wParam, lParam);
+#ifdef THPRAC_NATIVE_WIDGETS_ONLY
+        ImGui::SetCurrentContext(previousContext);
+#endif
+        if (handled) {
             return 1;
         }
         return CallWindowProcW(__thimgui_wp_original, hwnd, msg, wParam, lParam);
     }
     bool ImplWin32HookWndProc()
     {
-        __thimgui_wp_original = (WNDPROC)GetWindowLongW(g_hWnd, GWLP_WNDPROC);
+#ifdef THPRAC_NATIVE_WIDGETS_ONLY
+        g_hookContext = ImGui::GetCurrentContext();
+#endif
+        __thimgui_wp_original = (WNDPROC)GetWindowLongPtrW(g_hWnd, GWLP_WNDPROC);
         if (!__thimgui_wp_original) {
             return false;
         }
-        if (!SetWindowLongW(g_hWnd, GWLP_WNDPROC, (LONG)__ThImGui_WndProc_HookFunc)) {
+        if (!SetWindowLongPtrW(g_hWnd, GWLP_WNDPROC, (LONG_PTR)__ThImGui_WndProc_HookFunc)) {
             return false;
         }
         return true;
     }
     bool ImplWin32UnHookWndProc()
     {
-        return SetWindowLongW(g_hWnd, GWLP_WNDPROC, (LONG)__thimgui_wp_original) != 0;
+        return SetWindowLongPtrW(g_hWnd, GWLP_WNDPROC, (LONG_PTR)__thimgui_wp_original) != 0;
     }
     bool ImplWin32CheckFullScreen()
     {
