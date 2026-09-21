@@ -1,0 +1,71 @@
+name: Release Build
+
+on:
+  release:
+    types:
+      - published
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-build-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: windows-2025-vs2026
+    steps:
+      - name: Check out release tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Setup Developer PowerShell
+        uses: egor-tensin/vs-shell@v2
+        with:
+          arch: x86
+
+      - name: Build loc_json
+        working-directory: ./thprac
+        run: cl /Isrc\3rdparties\yyjson /nologo /EHsc /O2 /std:c++20 loc_json.cpp .\src\3rdParties\yyjson\yyjson.c /Fe:loc_json.exe
+
+      - name: Build Release
+        run: msbuild thprac.sln -t:restore,build -p:RestorePackagesConfig=true,Configuration=Release
+
+      - name: Package release
+        id: package
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          $packageName = "thprac-$env:RELEASE_TAG-windows-x86"
+          $packageDirectory = Join-Path $env:RUNNER_TEMP $packageName
+          $packagePath = Join-Path $env:RUNNER_TEMP "$packageName.zip"
+          $symbolsPath = Join-Path $env:RUNNER_TEMP "thprac-$env:RELEASE_TAG-symbols.zip"
+
+          New-Item -ItemType Directory -Path $packageDirectory | Out-Null
+          Copy-Item Release\thprac.exe $packageDirectory
+          Copy-Item README.md,README_CN.md,README_JP.md,README_KR.md,README_NC.md,LICENCE,THIRD_PARTY_NC_NOTICES.txt $packageDirectory
+          Compress-Archive -Path "$packageDirectory\*" -DestinationPath $packagePath
+          Compress-Archive -LiteralPath Release\thprac.pdb -DestinationPath $symbolsPath
+
+          "package-path=$packagePath" >> $env:GITHUB_OUTPUT
+          "symbols-path=$symbolsPath" >> $env:GITHUB_OUTPUT
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: thprac-${{ github.event.release.tag_name }}
+          path: |
+            ${{ steps.package.outputs.package-path }}
+            ${{ steps.package.outputs.symbols-path }}
+
+      - name: Attach packages to GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          PACKAGE_PATH: ${{ steps.package.outputs.package-path }}
+          SYMBOLS_PATH: ${{ steps.package.outputs.symbols-path }}
+        run: gh release upload $env:RELEASE_TAG $env:PACKAGE_PATH $env:SYMBOLS_PATH --clobber --repo $env:GITHUB_REPOSITORY
