@@ -31,3 +31,17 @@ No automated test framework or coverage threshold is configured. Treat a clean R
 ## Commit & Pull Request Guidelines
 
 History favors concise imperative subjects, often scoped: `fix(th06): Fix #409`, `feat(th095): ...`, or `Launcher: ...`. Keep commits focused and reference issues when applicable. Add `[skip ci]` to commits without C++ changes, except changes to `thprac_games_def.json`. PRs should explain behavior, affected games/versions, competitive-integrity impact, and verification; include screenshots for UI changes. Develop large features and new-game support on a separate branch. Read `CONTRIBUTING.md` before submitting: it also prohibits LLM-generated contributions.
+
+## Windows-native autonomous development
+
+- Use Windows-native PowerShell and Visual Studio/MSBuild with the x86 solution platform (mapped to project Win32). Do not use WSL, Linux paths, CMake, MinGW, or a replacement build system.
+- Inspect related code and the current diff before editing. Prefer minimal changes, match surrounding style, and avoid unrelated refactoring.
+- Use `scripts\build.ps1 -Configuration Debug` after C++ changes when tools are available. Analyze compiler diagnostics, fix the cause, and rebuild; do not hand back a routine build failure without attempting repair. Validate Release before completing a change.
+- A successful build does not complete a runtime task. Use `scripts\debug-session.ps1 start -Game TH18` with a configured disposable test installation, reproduce the issue, and verify the affected behavior. Use `-LauncherOnly` for launcher checks without a game.
+- Use PowerShell for build, process lifecycle, status, and diagnostic collection. Use the available Computer Use skill only for actual launcher/game GUI verification.
+- On runtime failure, run `scripts\debug-session.ps1 collect`, analyze the evidence, fix, rebuild, and repeat. Keep exact game/version, scenario, and results in the final report. Never claim attachment or gameplay verification from a live PID or injector exit code alone.
+- Always clean up with `scripts\debug-session.ps1 stop`, then inspect `git diff` and `git diff --check`. Preserve diagnostic evidence under the ignored `.debug` directory.
+- Do not terminate processes that the current debug session did not create. Never stop a process by name. Do not change Windows system/security configuration or install software without explicit approval.
+- Do not modify/delete the user's game saves or replays. Ask for a disposable test installation when runtime actions may write game data; launching a game can itself write settings/saves.
+- Do not commit to master. Do not commit or push unless explicitly requested. Do not perform destructive Git operations without an explicit request. Preserve unrelated user edits.
+- Use `.agents/skills/thprac-debug/SKILL.md` for the development/debug loop and `scripts/README.md` for commands and limitations. Existing contribution rules remain applicable to upstream submissions.
