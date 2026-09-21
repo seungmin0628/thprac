@@ -1,4 +1,5 @@
 #define NOMINMAX
+#include "thprac_native.h"
 #include "utils/wininternal.h"
 
 #include "thprac_update.h"
@@ -81,6 +82,9 @@ RUN_GAME_STATUS TryRunGame(const wchar_t* exeFn, wchar_t* cmdLine, uint32_t flag
     }
 
     auto* ver = knownGame.ver;
+    if (ver->gameId == ID_TH06NC) {
+        return LaunchTH06NC((flags & RUN_FLAG_THPRAC) != 0) ? RUN_GAME_SUCCESS : RUN_GAME_FAILURE;
+    }
     if (!ver->has_oilp) {
         flags &= ~RUN_FLAG_OILP;
     }
@@ -216,7 +220,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, [[maybe_unused]] HINSTANCE hPrevInstanc
     }
 
     UpdaterInit();
-    if (gSettings.check_update == CHECK_UPDATE_ALWAYS) {
+    if (!NativeBundle::Present() && gSettings.check_update == CHECK_UPDATE_ALWAYS) {
         const char* message =
             "Your update settings are configured to always check for updates when running thprac, but the updater failed to initialize."
             "\r\n\r\nDo you want to completely disable updates?";

@@ -319,7 +319,7 @@ void UiUpdate(HWND hwnd, LauncherState* state) {
         ImGuiWindowFlags_AlwaysUseWindowPadding | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize);
     ImGui::PopStyleVar();
 
-    const char* title = background_update_check->hThread ? S(THPRAC_LAUNCHER_CHECKING_UPDATE) : S(THPRAC_LAUNCHER);
+    const char* title = background_update_check && background_update_check->hThread ? S(THPRAC_LAUNCHER_CHECKING_UPDATE) : S(THPRAC_LAUNCHER);
     float begin_height = DrawTitleBar(hwnd, &state->g_IsOverTitleBarButton, title);
     ImGui::BeginChild("###__content", { io.DisplaySize.x, io.DisplaySize.y - begin_height }, false, ImGuiWindowFlags_AlwaysUseWindowPadding);
     ImGui::BeginTabBar("__launcher_tab_bar");

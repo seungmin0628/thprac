@@ -11,6 +11,7 @@ const wchar_t* UPDATE_JSON_URL = L"https://raw.githubusercontent.com/touhouworld
 #include "thprac_log.h"
 #include "thprac_utils.h"
 #include "thprac_update.h"
+#include "thprac_native_bundle.h"
 
 namespace THPrac {
 extern wchar_t old_working_dir[];
@@ -47,6 +48,11 @@ unsigned int BackgroundUpdateCallback(DOWNLOAD_CALLBACK_REASON reason, DownloadP
 
 HINTERNET hInternet = NULL;
 unsigned int UpdaterInit() {
+    // Upstream release EXEs do not contain this locally built NC adapter.
+    if (NativeBundle::Present()) {
+        log_print("Update: rebuild this New Classic integration to update it.\r\n");
+        return ERROR_NOT_SUPPORTED;
+    }
     HMODULE hWinInet = LoadLibraryW(L"wininet.dll");
     if (!hWinInet) {
         log_printf("Update: failed to load wininet.dll. Cannot proceed\r\n");
@@ -163,6 +169,7 @@ bool ParseUpdateJson(char* buf, size_t len, UpdateJson* out) {
 }
 
 bool CompleteUpdate(unsigned char* buf, size_t len, const wchar_t* pCmdLine, int nCmdShow, UpdateJson* updateJson) {
+    if (NativeBundle::Present()) return false;
     if (!pCmdLine) {
         pCmdLine = L"";
     }
