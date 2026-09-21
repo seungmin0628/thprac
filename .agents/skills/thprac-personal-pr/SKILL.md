@@ -34,7 +34,9 @@ For creation and updates, pass `--repo seungmin0628/thprac` to every `gh pr` com
 
 Inspect `AGENTS.md`, the current branch, status, diff, commits relative to the selected base, and relevant verification results before writing the title or body. Preserve unrelated user changes and do not commit, push, or publish merely because drafting was requested. Obtain whatever authorization is normally required immediately before an external mutation.
 
-Use a concise Conventional Commit-style PR title when it fits the change, such as `feat(th18): ...` or `fix(launcher): ...`. The body should accurately cover:
+Write the PR title and body in Korean. Keep Conventional Commit types and scopes, code identifiers, commands, paths, game/version names, and status labels such as `PASS`, `FAIL`, and `NOT TESTED` in their established notation when translating them would reduce precision. Use a concise Conventional Commit-style PR title when it fits the change, such as `feat(th18): 한국어 기능 설명` or `fix(launcher): 한국어 수정 설명`. Write body section headings and explanatory prose in Korean.
+
+The body should accurately cover:
 
 - the behavior and motivation;
 - affected games, versions, and code areas;
