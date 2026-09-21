@@ -124,14 +124,17 @@ HRESULT STDMETHODCALLTYPE Present(IDXGISwapChain* swap, UINT interval, UINT flag
         // Segoe UI lacks the official English spell-name corner quotes.
         // Reuse their Japanese glyphs from the same atlas, retaining each locale's font.
         auto& fonts=ImGui::GetIO().Fonts->Fonts;
-        for(ImWchar c:{ImWchar(0xff62),ImWchar(0xff63)}) {
-            if(!fonts[LOCALE_EN_US]->FindGlyphNoFallback(c)) {
-                if(const auto* glyph=fonts[LOCALE_JA_JP]->FindGlyphNoFallback(c))
-                    fonts[LOCALE_EN_US]->AddGlyph(nullptr,c,glyph->X0,glyph->Y0,glyph->X1,glyph->Y1,
-                        glyph->U0,glyph->V0,glyph->U1,glyph->V1,glyph->AdvanceX);
+        if (fonts.Size > LOCALE_EN_US && fonts.Size > LOCALE_JA_JP &&
+            fonts[LOCALE_EN_US] && fonts[LOCALE_JA_JP]) {
+            for(ImWchar c:{ImWchar(0xff62),ImWchar(0xff63)}) {
+                if(!fonts[LOCALE_EN_US]->FindGlyphNoFallback(c)) {
+                    if(const auto* glyph=fonts[LOCALE_JA_JP]->FindGlyphNoFallback(c))
+                        fonts[LOCALE_EN_US]->AddGlyph(nullptr,c,glyph->X0,glyph->Y0,glyph->X1,glyph->Y1,
+                            glyph->U0,glyph->V0,glyph->U1,glyph->V1,glyph->AdvanceX);
+                }
             }
+            fonts[LOCALE_EN_US]->BuildLookupTable();
         }
-        fonts[LOCALE_EN_US]->BuildLookupTable();
         Gui::LocaleSet(static_cast<Locale>(PracticeLanguage()));
         Gui::ImplWin32Init(desc.OutputWindow);
         ImGui_ImplDX11_Init(device, context);

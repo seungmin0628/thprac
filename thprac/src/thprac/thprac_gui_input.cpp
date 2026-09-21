@@ -2,7 +2,9 @@
 #include "thprac_gui_locale.h"
 #include "thprac_gui_impl_win32.h"
 #include <imgui.h>
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
 #include <Windows.h>
 #include <cstdint>
 
@@ -296,7 +298,7 @@ namespace THPrac
             } else {
                 strcpy(p, S(THPRAC_HOTKEY_UNASSIGNED));
             }
-            return p - chord_name;
+            return static_cast<unsigned int>(p - chord_name);
         }
 
 		void ChordEditDropdown(const char* label, int& chord) {
@@ -305,7 +307,7 @@ namespace THPrac
 
             if (ImGui::BeginCombo(label, chord_name, ImGuiComboFlags_HeightLargest)) {
                 for (size_t i = 0; i < ChordKey_KEYBOARD_COUNT; i++) {
-                    ImGui::PushID(i);
+                    ImGui::PushID(static_cast<int>(i));
                     bool ticked = (chord >> i) & 1;
                     if (ImGui::Checkbox(ChordKeyStrings[i], &ticked)) {
                         chord ^= (-((int)ticked) ^ chord) & (1 << i);

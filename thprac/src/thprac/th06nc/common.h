@@ -28,7 +28,7 @@ struct Status {
     int misses=0, bombsUsed=0;
     wchar_t message[160]{};
 };
-// UI language follows thprac's locale order: Chinese, English, Japanese.
+// UI language follows thprac's locale order: Chinese, English, Japanese, Korean.
 // Keep it outside Settings so it cannot affect practice or replay parameters.
 struct Shared {
     uint32_t magic=Magic, version=Protocol;

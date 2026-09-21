@@ -158,6 +158,9 @@
             case LOCALE_JA_JP:
                 SetItemWidth(-65.0f);
                 break;
+            case LOCALE_KO_KR:
+                SetItemWidth(-70.0f);
+                break;
             default:
                 break;
             }

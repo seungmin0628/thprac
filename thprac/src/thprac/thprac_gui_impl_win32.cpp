@@ -63,7 +63,7 @@ namespace Gui {
                 g_wndKeyStatus[wParam].hold += (lParam & 0x000000ff);
                 g_wndKeyStatus[wParam].frame = 1;
                 if (!g_wndKeyStatus[wParam].name[0]) {
-                    GetKeyNameTextA(lParam, g_wndKeyStatus[wParam].name, 32);
+                    GetKeyNameTextA(static_cast<LONG>(lParam), g_wndKeyStatus[wParam].name, 32);
                 }
             } else if (msg == WM_KEYUP || msg == WM_SYSKEYUP) {
                 g_wndKeyStatus[wParam].hold = 0;
@@ -505,7 +505,7 @@ namespace Gui {
                 io.KeysDown[wParam] = 0;
             return 0;
         case WM_CHAR:
-            io.AddInputCharacter(wParam);
+            io.AddInputCharacter(static_cast<unsigned int>(wParam));
             return 0;
         case WM_SETCURSOR:
             if (LOWORD(lParam) == HTCLIENT && ImplWin32UpdateMouseCursor())

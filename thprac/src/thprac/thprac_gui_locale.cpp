@@ -3,7 +3,9 @@
 #include <imgui_freetype.h>
 #include <cstdlib>
 
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
 #include <Windows.h>
 
 namespace THPrac {
@@ -106,6 +108,7 @@ static const short offsetsFrom0x4E00[] =
 static ImWchar baseUnicodeRanges[] =
 {
 	0x0020, 0x00FF, // Basic Latin + Latin Supplement
+	0x2000, 0x206F, // General Punctuation
 	0x3000, 0x30FF, // Punctuations, Hiragana, Katakana
 	0x31F0, 0x31FF, // Katakana Phonetic Extensions
 	0xFF00, 0xFFEF, // Half-width characters
@@ -118,14 +121,18 @@ static ImWchar baseUnicodeRanges[] =
     unsigned int __glocale_disabled = 0;
     ImWchar* __glocale_jp_glyphrange = nullptr;
     Locale __glocale_current = LOCALE_EN_US;
+    static ImFont* __glocale_fonts[LOCALE_COUNT] {};
 
     void LocaleSet(Locale locale)
     {
+        if (locale >= LOCALE_COUNT) return;
         gSettings.language = locale;
         __glocale_current = locale;
         if (!__glocale_merge) {
             ImGuiIO& io = ImGui::GetIO();
-            io.FontDefault = io.Fonts->Fonts[locale];
+            if (__glocale_fonts[locale]) {
+                io.FontDefault = __glocale_fonts[locale];
+            }
         }
     }
     void LocaleSetFromSysLang()
@@ -144,6 +151,10 @@ static ImWchar baseUnicodeRanges[] =
             gSettings.language = LOCALE_JA_JP;
             __glocale_current  = LOCALE_JA_JP;
             break;
+        case 0x12:
+            gSettings.language = LOCALE_KO_KR;
+            __glocale_current  = LOCALE_KO_KR;
+            break;
         }
     }
     inline const char** LocaleGetCurrentGlossary();
@@ -158,6 +169,9 @@ static ImWchar baseUnicodeRanges[] =
             LocaleSet(LOCALE_JA_JP);
             break;
         case LOCALE_JA_JP:
+            LocaleSet(LOCALE_KO_KR);
+            break;
+        case LOCALE_KO_KR:
             LocaleSet(LOCALE_ZH_CN);
             break;
         default:
@@ -190,6 +204,11 @@ static ImWchar baseUnicodeRanges[] =
         { L"Meiryo UI", 0, 1.0f },
         { L"MS UI Gothic", 0, 0.85f },
         { L"MS Mincho", 0, 0.85f },
+    };
+    font_info koFontsInfo[] = {
+        { L"Malgun Gothic", 0, 1.0f },
+        { L"맑은 고딕", 0, 1.0f },
+        { L"Gulim", 0, 0.9f },
     };
 
     int CALLBACK __glocale_font_enum_proc([[maybe_unused]] const LOGFONTW* lpelfe, [[maybe_unused]] const TEXTMETRICW* lpntme, [[maybe_unused]] DWORD FontType, LPARAM lParam)
@@ -308,6 +327,24 @@ static ImWchar baseUnicodeRanges[] =
         memcpy((void*)lParam, logicalFont->lfFaceName, sizeof(logicalFont->lfFaceName));
         return FALSE;
     }
+    int CALLBACK FindFirstKoreanFontProc(const LOGFONTW* logicalFont, const NEWTEXTMETRICEXW* fontMetricEx, DWORD fontType, LPARAM lParam)
+    {
+        if (fontType != TRUETYPE_FONTTYPE || logicalFont->lfCharSet != HANGUL_CHARSET) {
+            return TRUE;
+        }
+        if ((logicalFont->lfPitchAndFamily & 0x3) != VARIABLE_PITCH || logicalFont->lfFaceName[0] == '@') {
+            return TRUE;
+        }
+
+        // Code page 19 is Korean Wansung; Unicode subset 56 is Hangul Syllables.
+        if (!(fontMetricEx->ntmFontSig.fsCsb[19 / 32] & (1u << (19 % 32)))
+            || !(fontMetricEx->ntmFontSig.fsUsb[56 / 32] & (1u << (56 % 32)))) {
+            return TRUE;
+        }
+
+        memcpy((void*)lParam, logicalFont->lfFaceName, sizeof(logicalFont->lfFaceName));
+        return FALSE;
+    }
     HFONT CALLBACK CheckFontZh(HDC hdc, font_info& info)
     {
         LOGFONTW font = {};
@@ -408,6 +445,38 @@ static ImWchar baseUnicodeRanges[] =
             0, 0, 0, 0,
             info.font_name);
     }
+    HFONT CALLBACK CheckFontKo(HDC hdc, font_info& info)
+    {
+        LOGFONTW font = {};
+        int signal = 0;
+        font.lfPitchAndFamily = 0;
+        font.lfCharSet = HANGUL_CHARSET;
+
+        for (auto f : koFontsInfo) {
+            wcsncpy(font.lfFaceName, f.font_name, _countof(font.lfFaceName));
+            EnumFontFamiliesExW(hdc, &font, __glocale_font_enum_proc, (LPARAM)&signal, 0);
+            if (signal) {
+                info = f;
+                break;
+            }
+        }
+
+        if (!signal) {
+            wchar_t fontFamilyName[32] = {};
+            EnumFontFamiliesExW(hdc, nullptr, (FONTENUMPROCW)&FindFirstKoreanFontProc, (LPARAM)fontFamilyName, 0);
+            if (!*fontFamilyName) return nullptr;
+            info.font_name = L"";
+            info.font_index = 0;
+            info.font_scale = 1.0f;
+            return CreateFontW(0, 0, 0, 0, 0, 0, 0, 0, HANGUL_CHARSET, 0, 0, 0, 0, fontFamilyName);
+        }
+
+        return CreateFontW(
+            0, 0, 0, 0, 0, 0, 0, 0,
+            HANGUL_CHARSET,
+            0, 0, 0, 0,
+            info.font_name);
+    }
     ImWchar* GetGlyphRange(int locale)
     {
         auto& io = ImGui::GetIO();
@@ -442,6 +511,14 @@ static ImWchar baseUnicodeRanges[] =
             }
             break;
         }
+        case LOCALE_KO_KR:
+            if (gSettings.render_only_used_glyphs) {
+                glyphRange = (ImWchar*)__thprac_loc_range_ko;
+            }
+            else {
+                glyphRange = (ImWchar*)io.Fonts->GetGlyphRangesKorean();
+            }
+            break;
         default:
             break;
         }
@@ -452,13 +529,13 @@ static ImWchar baseUnicodeRanges[] =
         CheckFontZh,
         CheckFontEn,
         CheckFontJa,
+        CheckFontKo,
     };
 
-    static ImFont* __glocale_fonts[3] {};
     void LocaleFontWarning()
     {
         if (__glocale_disabled) {
-            if (__glocale_disabled == 7) {
+            if (__glocale_disabled == ((1u << LOCALE_COUNT) - 1)) {
                 MessageBoxW(nullptr, L"No font can be loaded.\nthprac will now terminate.", L"Fatal error", MB_OK | MB_ICONERROR);
                 ExitProcess(ERROR_FILE_CORRUPT);
             } else {
@@ -469,7 +546,7 @@ static ImWchar baseUnicodeRanges[] =
     bool LocaleCreateFont(float font_size)
     {
         auto& io = ImGui::GetIO();
-        for (unsigned int locale = 0; locale < 3; locale++) {
+        for (unsigned int locale = 0; locale < LOCALE_COUNT; locale++) {
             // Var Definition
             void* fontData = nullptr;
             DWORD fontDataSize = 0;
@@ -480,7 +557,7 @@ static ImWchar baseUnicodeRanges[] =
             auto font = fontCheckers[locale](hdc, info);
             if (font == nullptr) {
                 __glocale_disabled |= 1 << locale;
-                return false;
+                continue;
             }
             SelectObject(hdc, font);
 
@@ -492,7 +569,7 @@ static ImWchar baseUnicodeRanges[] =
                     DeleteObject(font);
                     DeleteDC(hdc);
                     __glocale_disabled |= 1 << locale;
-                    return false;
+                    continue;
                 }
                 fontData = ImGui::MemAlloc(fontDataSize);
                 GetFontData(hdc, 0, 0, fontData, fontDataSize);
@@ -522,7 +599,7 @@ static ImWchar baseUnicodeRanges[] =
         LocaleSet(LocaleGet());
         LocaleFontWarning();
 
-        return true;
+        return __glocale_disabled != ((1u << LOCALE_COUNT) - 1);
     }
     bool LocalAddMergeFont(float font_size, int locale, bool merge)
     {
@@ -577,21 +654,34 @@ static ImWchar baseUnicodeRanges[] =
     bool LocaleCreateMergeFont(float font_size) {
         auto& io = ImGui::GetIO();
         io.Fonts->Clear();
+        bool has_base = false;
+        auto SafeAdd = [&](int locale) {
+            if (LocalAddMergeFont(font_size, locale, has_base)) has_base = true;
+        };
         switch (gSettings.language) {
         case LOCALE_ZH_CN:
-            LocalAddMergeFont(font_size, LOCALE_ZH_CN, false);
-            LocalAddMergeFont(font_size, LOCALE_JA_JP, true);
-            LocalAddMergeFont(font_size, LOCALE_EN_US, true);
+            SafeAdd(LOCALE_ZH_CN);
+            SafeAdd(LOCALE_JA_JP);
+            SafeAdd(LOCALE_EN_US);
+            SafeAdd(LOCALE_KO_KR);
             break;
         case LOCALE_EN_US:
-            LocalAddMergeFont(font_size, LOCALE_EN_US, false);
-            LocalAddMergeFont(font_size, LOCALE_JA_JP, true);
-            LocalAddMergeFont(font_size, LOCALE_ZH_CN, true);
+            SafeAdd(LOCALE_EN_US);
+            SafeAdd(LOCALE_JA_JP);
+            SafeAdd(LOCALE_ZH_CN);
+            SafeAdd(LOCALE_KO_KR);
             break;
         case LOCALE_JA_JP:
-            LocalAddMergeFont(font_size, LOCALE_JA_JP, false);
-            LocalAddMergeFont(font_size, LOCALE_ZH_CN, true);
-            LocalAddMergeFont(font_size, LOCALE_EN_US, true);
+            SafeAdd(LOCALE_JA_JP);
+            SafeAdd(LOCALE_ZH_CN);
+            SafeAdd(LOCALE_EN_US);
+            SafeAdd(LOCALE_KO_KR);
+            break;
+        case LOCALE_KO_KR:
+            SafeAdd(LOCALE_KO_KR);
+            SafeAdd(LOCALE_EN_US);
+            SafeAdd(LOCALE_JA_JP);
+            SafeAdd(LOCALE_ZH_CN);
             break;
         default:
             return false;
@@ -600,8 +690,9 @@ static ImWchar baseUnicodeRanges[] =
         ImGuiFreeType::BuildFontAtlas(io.Fonts, 0);
         __glocale_merge = true;
         LocaleFontWarning();
+        if (io.Fonts->Fonts.Size > 0) io.FontDefault = io.Fonts->Fonts[0];
 
-        return true;
+        return __glocale_disabled != ((1u << LOCALE_COUNT) - 1);
     }
 }
 }
