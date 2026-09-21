@@ -1,0 +1,4 @@
+interface:
+  display_name: "thprac Personal PR"
+  short_description: "Create and update PRs only in seungmin0628/thprac"
+  default_prompt: "Use $thprac-personal-pr to create or update a pull request in my personal thprac repository."

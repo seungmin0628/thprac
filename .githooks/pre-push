@@ -1,0 +1,19 @@
+#!/bin/sh
+
+remote_name=$1
+remote_url=$2
+
+case "$remote_url" in
+    https://github.com/seungmin0628/thprac|\
+    https://github.com/seungmin0628/thprac.git|\
+    git@github.com:seungmin0628/thprac|\
+    git@github.com:seungmin0628/thprac.git|\
+    ssh://git@github.com/seungmin0628/thprac|\
+    ssh://git@github.com/seungmin0628/thprac.git)
+        exit 0
+        ;;
+esac
+
+echo "Push blocked: remote '$remote_name' is not seungmin0628/thprac." >&2
+echo "This repository only permits pushes to the personal GitHub repository." >&2
+exit 1
