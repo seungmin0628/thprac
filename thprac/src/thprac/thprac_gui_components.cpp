@@ -592,7 +592,7 @@ namespace THPrac
         {
             if (ImGui::BeginCombo(label, choices[out])) {
                 for (size_t i = 0; i < choices_count; i++) {
-                    ImGui::PushID(i);
+                    ImGui::PushID(static_cast<int>(i));
 
                     bool item_selected = (i == out);
 
@@ -621,7 +621,7 @@ namespace THPrac
         {
             if (ImGui::BeginCombo(label, S(choices[out]))) {
                 for (size_t i = 0; i < choices_count; i++) {
-                    ImGui::PushID(i);
+                    ImGui::PushID(static_cast<int>(i));
 
                     bool item_selected = (i == out);
 
@@ -659,7 +659,7 @@ namespace THPrac
             ComboSelect(out[level], choices, choices_count, labelStr);
 
             if (out[level]) {
-                ImGui::PushID(++level);
+                ImGui::PushID(static_cast<int>(++level));
                 MultiComboSelectImpl(out, choices, choices_count, format, level);
                 ImGui::PopID();
             }
@@ -740,7 +740,7 @@ namespace THPrac
 
             for (int i = 0;; i++) {
                 if (ButtonRight(label, x)) {
-                    ret = i;
+                    ret = static_cast<int>(i);
                 }
                 label = va_arg(va, const char*);
                 if (!label) {
@@ -776,7 +776,7 @@ namespace THPrac
 
             for (size_t i = 0; i < count; i++) {
                 if (ImGui::Button(va_arg(va, const char*), size)) {
-                    ret = i;
+                    ret = static_cast<int>(i);
                 }
                 if (i != count - 1) {
                     ImGui::SameLine();

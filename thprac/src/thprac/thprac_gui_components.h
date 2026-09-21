@@ -4,7 +4,9 @@
 #include <functional>
 #include <initializer_list>
 #include <utility>
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
 #include <Windows.h>
 
 #include "thprac_gui_impl_win32.h"

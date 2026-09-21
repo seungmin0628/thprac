@@ -1,4 +1,4 @@
-## [English](/README.md) [简体中文](/README_CN.md) [日本語](/README_JP.md)
+## [English](/README.md) [简体中文](/README_CN.md) [日本語](/README_JP.md) [한국어](/README_KR.md)
 
 # **thprac**
 > thprac은 동방 프로젝트 슈팅 게임을 연습하기 위한 도구입니다.
@@ -126,10 +126,12 @@ UDoALG용이라는 점을 제외하면 PoFV 도구와 같습니다.
 - 개발: [32th System](https://www.youtube.com/channel/UChyVpooBi31k3xPbWYsoq3w), [muter3000](https://github.com/muter3000), [zero318](https://github.com/zero318), [Lmocinemod](https://github.com/Lmocinemod), [Cao Minh](https://github.com/hoangcaominh), [raviddog](https://github.com/raviddog)
 - 중국어 번역: [CrestedPeak9](https://twitter.com/CrestedPeak9), maksim71_doll, DeepL
 - 일본어 번역: [Yu-miya](https://www.twitch.tv/toho_yumiya), [SOC](https://github.com/soc-3), [wefma](https://github.com/wefma), CyrusVorazan, DeepL
+- 한국어 번역: [Tea Barley](https://www.youtube.com/@teabarley), [Srty7462](https://www.youtube.com/@srty7462), [Sepheille](https://www.youtube.com/@cinitalp)
 - [이전 버그 추적기](https://github.com/ack7139/thprac/issues)의 모든 보고서를 [이곳](https://github.com/touhouworldcup/thprac/issues)으로 이전: [toimine](https://www.youtube.com/channel/UCtxu8Rg0Vh8mX6iENenetuA)
 - 영문 README.md: [Galagyy](https://github.com/Galagyy)
 - 중문 README.md 번역: [TNT569](https://github.com/TNT569), [H-J-Granger](https://github.com/H-J-Granger)
 - 일문 README.md 번역: [wefma](https://github.com/wefma)
+- 국문 README.md 번역: [Tea Barley](https://www.youtube.com/@teabarley)
 
 ## <a name="building-from-source"></a> **소스에서 빌드하기**
 ### 최초 설정(한 번만 수행)
@@ -204,6 +206,7 @@ thprac은 **thcrap**과 호환되며 [Universal THCRAP Launcher](https://github.
   - **`ALT + 1`**: 일본어
   - **`ALT + 2`**: 중국어
   - **`ALT + 3`**: 영어
+  - **`ALT + 4`**: 한국어
 
 언어 변경 단축키는 런처의 설정 탭에서 변경할 수 있습니다.
 

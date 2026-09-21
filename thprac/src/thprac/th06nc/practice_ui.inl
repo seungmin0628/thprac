@@ -165,6 +165,11 @@
                 SetPos(260.f, 65.f);
                 SetItemWidth(-65.0f);
                 break;
+            case LOCALE_KO_KR:
+                SetSize(350.f, 390.f);
+                SetPos(250.f, 65.f);
+                SetItemWidth(-70.0f);
+                break;
             default:
                 break;
             }

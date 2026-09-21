@@ -61,7 +61,7 @@ void sync() {
     if(lock!=WAIT_OBJECT_0 && lock!=WAIT_ABANDONED)return;
     if(shared->magic==Magic&&shared->version==Protocol) {
         if(valid(shared->settings))requested=shared->settings;
-        if(shared->language>=0&&shared->language<=2)language.store(shared->language,std::memory_order_relaxed);
+        if(shared->language>=0&&shared->language<=3)language.store(shared->language,std::memory_order_relaxed);
     }
 
     shared->status=status;
@@ -450,7 +450,7 @@ DWORD WINAPI start(void*) {
         if(auto view=static_cast<const LaunchOptions*>(MapViewOfFile(options,FILE_MAP_READ,0,0,sizeof(LaunchOptions)))) {
             if(view->magic==Magic && view->version==Protocol &&
                 (view->practice==0||view->practice==1) && (view->lowLatency==0||view->lowLatency==1) &&
-                view->language>=0 && view->language<=2)launchOptions=*view;
+                view->language>=0 && view->language<=3)launchOptions=*view;
             UnmapViewOfFile(view);
         }
         CloseHandle(options);

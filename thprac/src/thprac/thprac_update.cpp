@@ -416,13 +416,14 @@ static bool DownloadPopup(HINSTANCE hInstance, const wchar_t* title, const wchar
     return !dl.dl.abort_signal;
 }
 
-static const wchar_t* UPDATE_DIALOG_CHECKING[] = { L"检查更新中", L"Checking for update", L"更新を確認しています" };
-static const wchar_t* UPDATE_DIALOG_UPDATING[] = { L"正在更新thprac", L"Updating thprac", L"thpracを更新しています" };
-static const wchar_t* UPDATE_DIALOG_TITLE[] = { L"更新thprac？", L"Update thprac?", L"thpracを更新しますか？" };
+static const wchar_t* UPDATE_DIALOG_CHECKING[] = { L"检查更新中", L"Checking for update", L"更新を確認しています", L"업데이트 확인 중" };
+static const wchar_t* UPDATE_DIALOG_UPDATING[] = { L"正在更新thprac", L"Updating thprac", L"thpracを更新しています", L"thprac 업데이트 중" };
+static const wchar_t* UPDATE_DIALOG_TITLE[] = { L"更新thprac？", L"Update thprac?", L"thpracを更新しますか？", L"thprac을 업데이트하시겠습니까?" };
 static const wchar_t* UPDATE_DIALOG_TEXT[] = {
     L"已检测到thprac的新版本。\n是否现在下载更新？",
     L"An update for thprac has been detected.\nDownload update now?",
-    L"thpracの更新が検出されました。\n今すぐアップデートをダウンロードしますか？"
+    L"thpracの更新が検出されました。\n今すぐアップデートをダウンロードしますか？",
+    L"thprac의 새 버전이 감지되었습니다.\n지금 업데이트를 다운로드하시겠습니까?"
 };
 
 static bool PreLaunchUpdateConfirm() {

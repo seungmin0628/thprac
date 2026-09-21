@@ -6,8 +6,13 @@ namespace {
 Shared* shared{}; HANDLE mapping{},mutex{}; DWORD targetPid{};
 void failure(const std::wstring& text) { MessageBoxW(nullptr,text.c_str(),L"thprac - th06nc",MB_ICONERROR); }
 void disconnect() { if(shared)UnmapViewOfFile(shared);if(mapping)CloseHandle(mapping);if(mutex)CloseHandle(mutex);shared=nullptr;mapping=nullptr;mutex=nullptr;targetPid=0; }
-const wchar_t* localized(int language,const wchar_t* zh,const wchar_t* en,const wchar_t* ja) {
-    return language==0?zh:language==2?ja:en;
+const wchar_t* localized(int language,const wchar_t* zh,const wchar_t* en,const wchar_t* ja,const wchar_t* ko) {
+    switch(language) {
+    case 0: return zh;
+    case 2: return ja;
+    case 3: return ko;
+    default: return en;
+    }
 }
 struct LaunchMapping {
     HANDLE handle{};LaunchOptions* view{};
@@ -76,7 +81,8 @@ bool attach(DWORD pid,const LaunchOptions& options) {
     if(options.practice && !shared->practiceEnabled) {
       failure(localized(options.language,L"本次游戏仅启用了低延迟显示。请退出游戏，勾选“应用 thprac”后重新启动。",
         L"This game was started without practice features. Close it, enable Apply thprac, and launch again.",
-        L"練習機能なしで起動されています。ゲームを終了し、「thpracを適用する」を有効にして起動し直してください。"));
+        L"練習機能なしで起動されています。ゲームを終了し、「thpracを適用する」を有効にして起動し直してください。",
+        L"이 게임은 연습 기능 없이 실행되었습니다. 게임을 종료하고 ‘thprac 적용’을 켠 뒤 다시 실행하세요."));
       disconnect();return false;
     }
     for(int i=0;i<100&&!shared->status.ready&&!shared->status.error;++i)Sleep(25);
@@ -93,15 +99,15 @@ int WINAPI wWinMain(HINSTANCE,HINSTANCE,LPWSTR,int) {
  int argc=0;auto argv=CommandLineToArgvW(GetCommandLineW(),&argc);DWORD pid=0;bool launch=false;
  LaunchOptions options;
  int language=1;
- switch(PRIMARYLANGID(GetUserDefaultUILanguage())) {case LANG_CHINESE:language=0;break;case LANG_JAPANESE:language=2;break;}
+ switch(PRIMARYLANGID(GetUserDefaultUILanguage())) {case LANG_CHINESE:language=0;break;case LANG_JAPANESE:language=2;break;case LANG_KOREAN:language=3;break;}
  for(int i=1;i<argc;++i) {
    if(std::wstring(argv[i])==L"--attach"&&i+1<argc)pid=wcstoul(argv[++i],nullptr,10);
    else if(std::wstring(argv[i])==L"--steam")launch=true;
    else if(std::wstring(argv[i])==L"--low-latency")options.lowLatency=1;
    else if(std::wstring(argv[i])==L"--no-practice")options.practice=0;
    else if(std::wstring(argv[i])==L"--language") {
-     if(i+1>=argc||wcslen(argv[i+1])!=1||argv[i+1][0]<L'0'||argv[i+1][0]>L'2') {
-       LocalFree(argv);failure(L"Invalid --language (0=Chinese, 1=English, 2=Japanese).");return 4;
+     if(i+1>=argc||wcslen(argv[i+1])!=1||argv[i+1][0]<L'0'||argv[i+1][0]>L'3') {
+       LocalFree(argv);failure(L"Invalid --language (0=Chinese, 1=English, 2=Japanese, 3=Korean).");return 4;
      }
      language=argv[++i][0]-L'0';
    }
@@ -112,7 +118,8 @@ int WINAPI wWinMain(HINSTANCE,HINSTANCE,LPWSTR,int) {
    if(options.lowLatency && findGame()) {
      failure(localized(language,L"低延迟选项在启动时生效。请先退出正在运行的新典，再从启动器启动。",
        L"Low latency is a launch option. Close the running game, then launch it again from thprac.",
-       L"低遅延モードは起動時に適用されます。起動中のゲームを終了し、thpracから起動し直してください。"));return 5;
+       L"低遅延モードは起動時に適用されます。起動中のゲームを終了し、thpracから起動し直してください。",
+       L"저지연 옵션은 실행 시 적용됩니다. 실행 중인 게임을 종료한 뒤 thprac에서 다시 실행하세요."));return 5;
    }
    if(!findGame() && (INT_PTR)ShellExecuteW(nullptr,L"open",L"steam://rungameid/4659620",nullptr,nullptr,SW_SHOWNORMAL)<=32) {failure(L"无法启动 Steam。");return 1;}
    for(int i=0;i<600&&!pid;++i) {pid=findGame();if(!pid)Sleep(100);}
@@ -131,10 +138,12 @@ int WINAPI wWinMain(HINSTANCE,HINSTANCE,LPWSTR,int) {
      const wchar_t* text=shared->lowLatencyState==static_cast<int>(THPrac::TH06NC::DisplayState::Unavailable)
        ?localized(language,L"低延迟显示未能启用，游戏将使用原本的显示方式。请使用 Borderless 或 Window；当前系统及显卡驱动也需支持此显示模式。",
          L"Low-latency display could not be enabled. The game will use its original display path. Use Borderless or Window; support from Windows and the graphics driver is also required.",
-         L"低遅延表示を有効にできなかったため、通常の表示方式を使用します。Borderless または Window を選択してください。Windowsとグラフィックスドライバーの対応も必要です。")
+         L"低遅延表示を有効にできなかったため、通常の表示方式を使用します。Borderless または Window を選択してください。Windowsとグラフィックスドライバーの対応も必要です。",
+         L"저지연 표시를 활성화할 수 없어 게임이 원래 표시 경로를 사용합니다. Borderless 또는 Window를 사용하세요. Windows와 그래픽 드라이버도 지원해야 합니다.")
        :localized(language,L"尚未确认低延迟显示已就绪。请关闭游戏后重新启动。",
          L"Low-latency display is not ready. Please close the game and launch it again.",
-         L"低遅延表示の準備を確認できませんでした。ゲームを終了して起動し直してください。");
+         L"低遅延表示の準備を確認できませんでした。ゲームを終了して起動し直してください。",
+         L"저지연 표시가 준비되었는지 확인하지 못했습니다. 게임을 종료한 뒤 다시 실행하세요.");
      MessageBoxW(nullptr,text,L"thprac - th06nc",MB_ICONWARNING);
    }
  }
