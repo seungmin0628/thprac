@@ -27,6 +27,16 @@ Run build.ps1 as a script, not dot-sourced: it exits with the build result and i
 
 ## Configure a game
 
+Run `scripts\provision-game-env.ps1 -GamesConfig '<path to thcrap games.js>'` to
+copy mapped supported games into disposable installations, omitting local
+score/replay files. It reports missing configured executables and stores the
+configured launcher path separately from the game executable for attachment.
+Changing `APPDATA` for a process does not redirect Windows Known Folder lookups,
+so it does not by itself isolate original ShanghaiAlice data. The owner approved
+normal non-replay game-data writes in this test. See
+[game-environments.md](game-environments.md) for per-game runtime evidence and
+missing installation paths. Do not save replays during this verification.
+
 ### New Classic build integration
 
 The existing build now also compiles `thprac_bridge64.vcxproj` and
@@ -48,7 +58,7 @@ $env:THPRAC_TEST_TH18 = 'C:\Games\Touhou18-Test\th18.exe'
 .\scripts\debug-session.ps1 start -Game TH18
 ~~~
 
-Precedence: -GamePath, then THPRAC_TEST_<GAME>, then debug.local.json games entry. No secrets belong in these files. Real configuration and artifacts are ignored by Git. Scripts never edit/delete saves or replays, but the game itself may write data when launched or played. Use a disposable test installation with appropriately isolated saves; game-specific external save locations also need consideration.
+Precedence: -GamePath, then THPRAC_TEST_<GAME>, then debug.local.json games entry. No secrets belong in these files. Real configuration and artifacts are ignored by Git. Scripts never edit/delete saves or replays, but the game itself may write data when launched or played. The owner has authorized normal non-replay game-data writes for this verification; do not save a replay.
 
 ### TH06 with thcrap (required for this workspace)
 
@@ -72,6 +82,11 @@ Run `scripts\test-debug-job.ps1` for the no-game regression check: Unicode/quote
 
 ## Session lifecycle
 
+Game keyboard verification uses the user-authorized, session-bound
+`game-input.ps1` helper for scan-code presses and timed chords. Read
+[game-input.md](game-input.md) for one-time environment qualification, TH06 demo
+recovery, pause/restart workflow, safety limits, and verified scope.
+
 For Steam New Classic, use `start -Game TH06NC -GamePath '<installation>\th06nc.exe'`.
 The Steam client must already be running. The worker supplies Steam app ID 4659620
 only in its own environment and its children, allowing a direct launch whose
@@ -91,7 +106,7 @@ actual installation and its normal settings/save writes.
 .\scripts\collect-debug.ps1
 ~~~
 
-Start does not build implicitly. It copies the selected executable/PDB into an isolated session and supplies portable launcher settings disabling automatic game search. A hidden PowerShell worker starts the game directly or through the configured thcrap loader, then runs thprac --attach with the owned game PID. Interactive app windows are visible for verification. Do not launch more processes from the thprac GUI during a managed session.
+Start does not build implicitly. It copies the selected executable/PDB into an isolated session and supplies portable launcher settings disabling automatic game search. A hidden PowerShell worker starts the game directly, through the configured thcrap loader, or through a configured launcher tracked by a private job, then runs thprac --attach with the owned game PID. Interactive app windows are visible for verification. Do not launch more processes from the thprac GUI during a managed session.
 
 A successful start means process launch, not successful injection or gameplay. An injector often exits normally while the game continues; the worker keeps monitoring the game. Use Computer Use for actual launcher/menu/practice verification and record the supported game version and scenario. Do not infer success from a PID or exit code.
 

@@ -18,7 +18,7 @@ try {
     if ($Action -eq 'start') {
         $thcrap = $null
         if ($state) {
-            foreach ($record in @($state.worker, $state.thprac, $state.game, $state.loader)) {
+            foreach ($record in @($state.worker, $state.thprac, $state.game, $state.loader, $state.launcher)) {
                 $live = Get-OwnedProcess $record
                 if ($live) { $live.Dispose(); throw 'The previous session still has a live process. Run debug-session.ps1 stop first.' }
             }
@@ -28,15 +28,19 @@ try {
             if (!$Game) { throw 'Specify -Game TH18 (with a configured executable) or -LauncherOnly.' }
             if ($Game -ieq 'TH6') { $Game = 'TH06' }
             if (!$GamePath) { $GamePath = [Environment]::GetEnvironmentVariable("THPRAC_TEST_$($Game.ToUpperInvariant())") }
+            $launchPath = $GamePath
             $localConfig = Join-Path $RepoRoot 'debug.local.json'
             if (Test-Path -LiteralPath $localConfig) {
                 $config = Read-DebugJson $localConfig
                 $entry = $config.games.PSObject.Properties[$Game]
                 if ($entry) {
                     if ($entry.Value -is [string]) {
-                        if (!$GamePath) { $GamePath = $entry.Value }
+                        if (!$GamePath) { $GamePath = $entry.Value; $launchPath = $GamePath }
                     } else {
-                        if (!$GamePath) { $GamePath = [string]$entry.Value.path }
+                        if (!$GamePath) {
+                            $launchPath = [string]$entry.Value.path
+                            $GamePath = if ($entry.Value.gameExe) { [string]$entry.Value.gameExe } else { $launchPath }
+                        }
                         $thcrap = $entry.Value.thcrap
                     }
                 }
@@ -46,7 +50,15 @@ try {
             }
             $GamePath = (Get-Item -LiteralPath $GamePath).FullName
             if ([IO.Path]::GetExtension($GamePath) -ine '.exe') { throw 'The game path must refer to an .exe file.' }
+            if (!$launchPath -or ![IO.Path]::IsPathRooted($launchPath) -or !(Test-Path -LiteralPath $launchPath -PathType Leaf)) { throw "No valid launch executable path for ${Game}: $launchPath" }
+            $launchPath = (Get-Item -LiteralPath $launchPath).FullName
+            if ([IO.Path]::GetExtension($launchPath) -ine '.exe') { throw 'The launch path must refer to an .exe file.' }
             if ($Game -ieq 'TH06' -and !$thcrap) { throw 'TH06 requires a thcrap entry in debug.local.json. See debug.example.json.' }
+            $isolateAppData = $false
+            if (Test-Path -LiteralPath $localConfig) {
+                $entry = (Read-DebugJson $localConfig).games.PSObject.Properties[$Game]
+                if ($entry -and $entry.Value -isnot [string]) { $isolateAppData = [bool]$entry.Value.appData }
+            }
             if ($thcrap) {
                 foreach ($field in @('loader', 'config')) {
                     $value = [string]$thcrap.$field
@@ -84,6 +96,8 @@ try {
         $bin = Join-Path $dir 'bin'
         $data = Join-Path $bin '.thprac_data'
         New-Item -ItemType Directory -Force -Path $data | Out-Null
+        $sessionAppData = $null
+        if ($isolateAppData) { $sessionAppData = Join-Path $dir 'appdata'; New-Item -ItemType Directory -Force -Path $sessionAppData | Out-Null }
         Copy-Item -LiteralPath $built -Destination $bin
         $pdb = Join-Path $RepoRoot "$Configuration\thprac.pdb"
         if (Test-Path -LiteralPath $pdb) { Copy-Item -LiteralPath $pdb -Destination $bin }
@@ -92,9 +106,9 @@ try {
         Write-DebugJson (Join-Path $data 'settings.json') @{ dont_search_ongoing_game=$true; existing_game_launch_action=1 }
         $state = [pscustomobject]@{
             schemaVersion=2; id=$id; phase='starting'; startedUtc=[DateTime]::UtcNow.ToString('o'); updatedUtc=$null
-            targetGame=$Game; gamePath=$GamePath; configuration=$Configuration
+            targetGame=$Game; gamePath=$GamePath; launchPath=$launchPath; configuration=$Configuration; appDataPath=$sessionAppData
             thpracPath=(Join-Path $bin 'thprac.exe'); outputDirectory=$dir
-            worker=$null; thprac=$null; game=$null; loader=$null; thcrap=$thcrap; thcrapModule=$null; error=$null
+            worker=$null; thprac=$null; game=$null; loader=$null; launcher=$null; thcrap=$thcrap; thcrapModule=$null; error=$null
         }
         Write-DebugJson (Join-Path $dir 'state.json') $state
         Write-DebugJson (Join-Path $DebugRoot 'session.json') @{ id=$id }
@@ -103,6 +117,7 @@ try {
         $worker = Start-Process -FilePath $shell -ArgumentList $workerArgs -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $dir 'worker.stdout.log') -RedirectStandardError (Join-Path $dir 'worker.stderr.log')
         $startupSeconds = 20
         if ($thcrap) { $startupSeconds += $thcrap.timeoutSeconds }
+        elseif ($launchPath -ne $GamePath) { $startupSeconds += 30 }
         $deadline = [DateTime]::UtcNow.AddSeconds($startupSeconds)
         do {
             Start-Sleep -Milliseconds 200
@@ -124,7 +139,7 @@ try {
             if (!$worker.WaitForExit(15000)) { throw 'Worker has not finished cleanup. Retry status/stop; no unrelated processes were terminated.' }
             $worker.Dispose()
         } else {
-            foreach ($record in @($state.thprac, $state.game, $state.loader)) {
+            foreach ($record in @($state.thprac, $state.game, $state.loader, $state.launcher)) {
                 $owned = Get-OwnedProcess $record
                 if ($owned) {
                     try { Stop-OwnedProcess $owned; Update-ProcessRecord $owned $record }
@@ -140,7 +155,7 @@ try {
     if ($Action -eq 'collect') { & "$PSScriptRoot\collect-debug.ps1" -SessionDirectory $dir; exit $LASTEXITCODE }
     # Refresh without overwriting the worker's state.
     $view = $state | ConvertTo-Json -Depth 12 | ConvertFrom-Json
-    foreach ($record in @($view.worker, $view.thprac, $view.game, $view.loader)) {
+    foreach ($record in @($view.worker, $view.thprac, $view.game, $view.loader, $view.launcher)) {
         if (!$record -or $record.state -eq 'exited') { continue }
         $live = Get-OwnedProcess $record
         if ($live) { $record.state='running'; $live.Dispose() }
