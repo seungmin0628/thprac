@@ -5,8 +5,17 @@ $state = Read-DebugJson $statePath
 $gameProcess = $null
 $thpracProcess = $null
 $loaderProcess = $null
+$launcherProcess = $null
 $job = $null
 try {
+    if ($state.appDataPath) {
+        $sessionRoot = [IO.Path]::GetFullPath($SessionDirectory).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
+        if (![IO.Path]::GetFullPath($state.appDataPath).StartsWith($sessionRoot, [StringComparison]::OrdinalIgnoreCase)) {
+            throw 'Isolated AppData must be inside the managed session.'
+        }
+        New-Item -ItemType Directory -Force -Path $state.appDataPath | Out-Null
+        $env:APPDATA = $state.appDataPath
+    }
     $state.worker = Get-ProcessRecord (Get-Process -Id $PID) (Get-Process -Id $PID).Path
     Write-DebugJson $statePath $state
     if ($state.gamePath) {
@@ -38,6 +47,29 @@ try {
                 Start-Sleep -Milliseconds 100
             } while ([DateTime]::UtcNow -lt $deadline)
             if (!$gameProcess) { throw 'Timed out waiting for the configured game inside the thcrap session job.' }
+        } elseif ($state.launchPath -and $state.launchPath -ine $state.gamePath) {
+            Add-Type -Path "$PSScriptRoot\DebugJob.cs"
+            $job = [ThpracDebugJob]::new($state.launchPath, [string[]]@(), [IO.Path]::GetDirectoryName($state.launchPath))
+            $launcherProcess = $job.Root
+            $state.launcher = Get-ProcessRecord $launcherProcess $state.launchPath
+            Write-DebugJson $statePath $state
+            $deadline = [DateTime]::UtcNow.AddSeconds(30)
+            do {
+                if (Test-Path -LiteralPath (Join-Path $SessionDirectory 'stop.request')) { throw 'Startup cancelled.' }
+                foreach ($candidate in $job.Processes()) {
+                    if ($candidate.Path -ieq $state.gamePath) {
+                        if ($gameProcess) { $candidate.Dispose(); throw 'Multiple matching game processes in the session job; refusing ambiguous attachment.' }
+                        $gameProcess = $candidate
+                    } else { $candidate.Dispose() }
+                }
+                Update-ProcessRecord $launcherProcess $state.launcher
+                if ($gameProcess) { break }
+                if ($launcherProcess.HasExited -and $launcherProcess.ExitCode -ne 0) {
+                    throw "Configured launcher exited with code $($launcherProcess.ExitCode)."
+                }
+                Start-Sleep -Milliseconds 100
+            } while ([DateTime]::UtcNow -lt $deadline)
+            if (!$gameProcess) { throw "Configured launcher did not start $($state.gamePath) inside the managed session." }
         } else {
             if ($state.targetGame -ieq 'TH06NC') {
                 # The Steam client is still required. Supply its application
@@ -71,6 +103,7 @@ try {
         Update-ProcessRecord $gameProcess $state.game
         Update-ProcessRecord $thpracProcess $state.thprac
         Update-ProcessRecord $loaderProcess $state.loader
+        Update-ProcessRecord $launcherProcess $state.launcher
         $state.updatedUtc = [DateTime]::UtcNow.ToString('o')
         Write-DebugJson $statePath $state
         if (Test-Path -LiteralPath (Join-Path $SessionDirectory 'stop.request')) { break }
@@ -80,13 +113,14 @@ try {
     $state.phase = 'stopped'
 } catch { $state.phase = 'failed'; $state.error = $_.Exception.Message }
 finally {
-    foreach ($process in @($thpracProcess, $gameProcess, $loaderProcess)) {
+    foreach ($process in @($thpracProcess, $gameProcess, $loaderProcess, $launcherProcess)) {
         try { Stop-OwnedProcess $process }
         catch { $state.error += " Cleanup: $($_.Exception.Message)"; $state.phase = 'failed' }
     }
     Update-ProcessRecord $gameProcess $state.game
     Update-ProcessRecord $thpracProcess $state.thprac
     Update-ProcessRecord $loaderProcess $state.loader
+    Update-ProcessRecord $launcherProcess $state.launcher
     if ($job) { $job.Dispose() }
     $state.updatedUtc = [DateTime]::UtcNow.ToString('o')
     Write-DebugJson $statePath $state
