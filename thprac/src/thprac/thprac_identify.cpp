@@ -392,6 +392,11 @@ constexpr const THGameVersion gGameVersions[] = {
         .gameId = ID_TH06NC,
         .exeInfo = { .timeStamp = 1788754577, .textSize = 2878464 },
         .oepCode = { 0xc209, 0x6aae, 0x00ab, 0x4442, 0x0d45, 0x82c5, 0xae6f, 0xb632, 0xb6b6, 0x8686 }
+    },
+    {
+        .gameId = ID_TH06NC,
+        .exeInfo = { .timeStamp = 1789411850, .textSize = 3095552 },
+        .oepCode = { 0xc209, 0x6aae, 0x30ab, 0x4442, 0x0d45, 0x82c5, 0xae6f, 0xb632, 0xb6b6, 0x8686 }
     }
 };
 

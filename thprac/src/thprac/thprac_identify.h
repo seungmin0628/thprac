@@ -130,6 +130,7 @@ enum ThVersionArrOffset {
     VER_TH19_V1_10C,
     VER_TH20,
     VER_TH06NC,
+    VER_TH06NC_UPDATED,
     VER_MAX,
 };
 

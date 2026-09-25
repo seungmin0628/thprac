@@ -192,7 +192,7 @@ LauncherGame gamesAll[ID_TH_MAX - 1] = {
         .id = ID_TH06NC,
         .title = TH06NC_TITLE,
         .versions = gGameVersions + VER_TH06NC,
-        .ver_count = 1,
+        .ver_count = 2,
         .steamId = 4659620,
         .shots = THPRAC_GAMEROLL_TH06_SHOTTYPES,
         .shot_columns = 2,
@@ -507,7 +507,7 @@ static void EnsureNCSteamInstance() {
         auto* instance = static_cast<LauncherInstance*>(calloc(1, sizeof(LauncherInstance)));
         if (!instance) return;
         instance->path = _strdup("steam://rungameid/4659620");
-        instance->name = _strdup("Steam - th06nc 1.03");
+        instance->name = _strdup("Steam - th06nc");
         instance->type = TYPE_STEAM;
         instance->apply_thprac = true;
         game.instances = instance;

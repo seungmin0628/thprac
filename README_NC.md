@@ -10,10 +10,14 @@ In the game select **Practice Start**, difficulty, character, stage, then the pr
 settings and Z. Steam must be installed and the game owned and installed separately.
 The existing Tools menu can also attach to a running supported New Classic process.
 
-Supported: Steam th06nc **1.03**, Windows x64, executable SHA-256
-`07850c8c6e469c0e82c13423e6d0d096a88d693455bdacacbb44c0aa3bcce473`.
-The bridge verifies the complete executable hash before injection.
-Game updates require a corresponding adapter update.
+Supported: Steam th06nc **1.03** and Steam build **25306795** (September 2026),
+Windows x64. Supported executable SHA-256 hashes:
+
+- 1.03: `07850c8c6e469c0e82c13423e6d0d096a88d693455bdacacbb44c0aa3bcce473`
+- Build 25306795: `48630a42a2eb6762d0db2a7e0d151203efbe67220fef7d2f9d0d51857928ac82`
+
+The bridge verifies the complete executable hash before injection and selects the
+corresponding address profile. Future game updates require a corresponding adapter update.
 
 Only `thprac.exe` needs to be distributed. It embeds the x64 bridge, game module,
 FreeType dependency and licenses. On first use it extracts them into
